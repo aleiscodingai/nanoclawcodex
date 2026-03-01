@@ -92,7 +92,7 @@ Full `Options` type from the official docs:
 | `resume` | `string` | `undefined` | Session ID to resume |
 | `resumeSessionAt` | `string` | `undefined` | Resume session at a specific message UUID |
 | `sandbox` | `SandboxSettings` | `undefined` | Sandbox behavior configuration |
-| `settingSources` | `SettingSource[]` | `[]` (none) | Which filesystem settings to load. Must include `'project'` to load CLAUDE.md |
+| `settingSources` | `SettingSource[]` | `[]` (none) | Which filesystem settings to load. Must include `'project'` to load CODEX.md |
 | `stderr` | `(data: string) => void` | `undefined` | Callback for stderr output |
 | `systemPrompt` | `string \| { type: 'preset'; preset: 'claude_code'; append?: string }` | `undefined` | System prompt. Use preset to get Claude Code's prompt, with optional `append` |
 | `tools` | `string[] \| { type: 'preset'; preset: 'claude_code' }` | `undefined` | Tool configuration |
@@ -107,9 +107,9 @@ type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
 
 ```typescript
 type SettingSource = 'user' | 'project' | 'local';
-// 'user'    → ~/.claude/settings.json
-// 'project' → .claude/settings.json (version controlled)
-// 'local'   → .claude/settings.local.json (gitignored)
+// 'user'    → ~/.codex/settings.json
+// 'project' → .codex/settings.json (version controlled)
+// 'local'   → .codex/settings.local.json (gitignored)
 ```
 
 When omitted, SDK loads NO filesystem settings (isolation by default). Precedence: local > project > user. Programmatic options always override filesystem settings.

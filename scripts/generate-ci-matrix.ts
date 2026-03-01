@@ -74,7 +74,7 @@ export function computeOverlapMatrix(skills: SkillOverlapInfo[]): MatrixEntry[] 
 }
 
 /**
- * Read all skill manifests from a skills directory (e.g. .claude/skills/).
+ * Read all skill manifests from a skills directory (e.g. .codex/skills/).
  * Each subdirectory should contain a manifest.yaml.
  * Returns both the parsed manifest and the directory name.
  */
@@ -112,7 +112,7 @@ export function generateMatrix(skillsDir: string): MatrixEntry[] {
 // --- Main ---
 if (process.argv[1] && path.resolve(process.argv[1]) === path.resolve(import.meta.url.replace('file://', ''))) {
   const projectRoot = process.cwd();
-  const skillsDir = path.join(projectRoot, '.claude', 'skills');
+  const skillsDir = path.join(projectRoot, '.codex', 'skills');
   const matrix = generateMatrix(skillsDir);
   console.log(JSON.stringify(matrix, null, 2));
 }

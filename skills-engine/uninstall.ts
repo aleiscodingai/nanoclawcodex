@@ -84,7 +84,7 @@ export async function uninstallSkill(
         return {
           success: false,
           skill: skillName,
-          error: `Cannot find skill package for "${name}" in .claude/skills/. All remaining skills must be available for replay.`,
+          error: `Cannot find skill package for "${name}" in .codex/skills/. All remaining skills must be available for replay.`,
         };
       }
       skillDirs[name] = dir;

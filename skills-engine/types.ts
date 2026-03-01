@@ -89,7 +89,7 @@ export interface ResolutionMeta {
   resolved_at: string;
   tested: boolean;
   test_passed: boolean;
-  resolution_source: 'maintainer' | 'user' | 'claude';
+  resolution_source: 'maintainer' | 'user' | 'claude' | 'codex';
   input_hashes: Record<string, string>;
   output_hash: string;
   file_hashes: Record<string, FileInputHashes>;

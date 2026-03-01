@@ -37,14 +37,14 @@ export interface ReplayResult {
 }
 
 /**
- * Scan .claude/skills/ for a directory whose manifest.yaml has skill: <skillName>.
+ * Scan .codex/skills/ for a directory whose manifest.yaml has skill: <skillName>.
  */
 export function findSkillDir(
   skillName: string,
   projectRoot?: string,
 ): string | null {
   const root = projectRoot ?? process.cwd();
-  const skillsRoot = path.join(root, '.claude', 'skills');
+  const skillsRoot = path.join(root, '.codex', 'skills');
   if (!fs.existsSync(skillsRoot)) return null;
 
   for (const entry of fs.readdirSync(skillsRoot, { withFileTypes: true })) {

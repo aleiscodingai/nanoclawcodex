@@ -25,7 +25,7 @@ export function findResolutionDir(
 ): string | null {
   const key = resolutionKey(skills);
 
-  // Check shipped resolutions (.claude/resolutions/) first, then project-level
+  // Check shipped resolutions (.codex/resolutions/) first, then project-level
   for (const baseDir of [SHIPPED_RESOLUTIONS_DIR, RESOLUTIONS_DIR]) {
     const dir = path.join(projectRoot, baseDir, key);
     if (fs.existsSync(dir)) {

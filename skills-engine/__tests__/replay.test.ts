@@ -31,7 +31,7 @@ describe('replay', () => {
 
   describe('findSkillDir', () => {
     it('finds skill directory by name', () => {
-      const skillsRoot = path.join(tmpDir, '.claude', 'skills', 'telegram');
+      const skillsRoot = path.join(tmpDir, '.codex', 'skills', 'telegram');
       fs.mkdirSync(skillsRoot, { recursive: true });
       const { stringify } = require('yaml');
       fs.writeFileSync(
@@ -54,7 +54,7 @@ describe('replay', () => {
       expect(result).toBeNull();
     });
 
-    it('returns null when .claude/skills does not exist', () => {
+    it('returns null when .codex/skills does not exist', () => {
       const result = findSkillDir('anything', tmpDir);
       expect(result).toBeNull();
     });

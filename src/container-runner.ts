@@ -4,6 +4,7 @@
  */
 import { ChildProcess, exec, spawn } from 'child_process';
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
 import {
@@ -11,11 +12,9 @@ import {
   CONTAINER_MAX_OUTPUT_SIZE,
   CONTAINER_TIMEOUT,
   DATA_DIR,
-  GROUPS_DIR,
   IDLE_TIMEOUT,
   TIMEZONE,
 } from './config.js';
-import { readEnvFile } from './env.js';
 import { resolveGroupFolderPath, resolveGroupIpcPath } from './group-folder.js';
 import { logger } from './logger.js';
 import { CONTAINER_RUNTIME_BIN, readonlyMountArgs, stopContainer } from './container-runtime.js';
@@ -34,7 +33,6 @@ export interface ContainerInput {
   isMain: boolean;
   isScheduledTask?: boolean;
   assistantName?: string;
-  secrets?: Record<string, string>;
 }
 
 export interface ContainerOutput {
@@ -50,17 +48,67 @@ interface VolumeMount {
   readonly: boolean;
 }
 
+const CODEX_HOME_DIR = '/home/node/.codex';
+
+function escapeTomlString(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function buildCodexConfig(input: ContainerInput): string {
+  const chatJid = escapeTomlString(input.chatJid);
+  const groupFolder = escapeTomlString(input.groupFolder);
+  const isMain = input.isMain ? '1' : '0';
+  return [
+    'project_doc_fallback_filenames = ["CODEX.md"]',
+    'sandbox_mode = "workspace-write"',
+    'web_search = "cached"',
+    '',
+    '[mcp_servers.nanoclaw]',
+    'command = "node"',
+    'args = ["/app/src/ipc-mcp-stdio.js"]',
+    `env = { NANOCLAW_CHAT_JID = "${chatJid}", NANOCLAW_GROUP_FOLDER = "${groupFolder}", NANOCLAW_IS_MAIN = "${isMain}" }`,
+    '',
+  ].join('\n');
+}
+
+function copyMissing(src: string, dst: string): void {
+  if (!fs.existsSync(src)) return;
+  const stat = fs.statSync(src);
+  if (stat.isDirectory()) {
+    fs.mkdirSync(dst, { recursive: true });
+    for (const entry of fs.readdirSync(src)) {
+      copyMissing(path.join(src, entry), path.join(dst, entry));
+    }
+    return;
+  }
+  if (!fs.existsSync(dst)) {
+    fs.copyFileSync(src, dst);
+  }
+}
+
+function ensureCodexHome(groupSessionsDir: string, input: ContainerInput): void {
+  fs.mkdirSync(groupSessionsDir, { recursive: true });
+
+  const userCodexDir = path.join(os.homedir(), '.codex');
+  if (fs.existsSync(userCodexDir)) {
+    copyMissing(userCodexDir, groupSessionsDir);
+  }
+
+  const configPath = path.join(groupSessionsDir, 'config.toml');
+  fs.writeFileSync(configPath, buildCodexConfig(input));
+}
+
 function buildVolumeMounts(
   group: RegisteredGroup,
-  isMain: boolean,
+  input: ContainerInput,
 ): VolumeMount[] {
   const mounts: VolumeMount[] = [];
   const projectRoot = process.cwd();
   const groupDir = resolveGroupFolderPath(group.folder);
 
-  if (isMain) {
+  if (input.isMain) {
     // Main gets the project root read-only. Writable paths the agent needs
-    // (group folder, IPC, .claude/) are mounted separately below.
+    // (group folder, IPC, .codex/) are mounted separately below.
     // Read-only prevents the agent from modifying host application code
     // (src/, dist/, package.json, etc.) which would bypass the sandbox
     // entirely on next restart.
@@ -84,45 +132,29 @@ function buildVolumeMounts(
       readonly: false,
     });
 
-    // Global memory directory (read-only for non-main)
-    // Only directory mounts are supported, not file mounts
-    const globalDir = path.join(GROUPS_DIR, 'global');
-    if (fs.existsSync(globalDir)) {
-      mounts.push({
-        hostPath: globalDir,
-        containerPath: '/workspace/global',
-        readonly: true,
-      });
-    }
   }
 
-  // Per-group Claude sessions directory (isolated from other groups)
-  // Each group gets their own .claude/ to prevent cross-group session access
+  // Global CODEX.md (read-only for non-main)
+  const globalCodexPath = path.join(projectRoot, 'CODEX.md');
+  if (fs.existsSync(globalCodexPath)) {
+    mounts.push({
+      hostPath: globalCodexPath,
+      containerPath: '/workspace/global/CODEX.md',
+      readonly: !input.isMain,
+    });
+  }
+
+  // Per-group Codex sessions directory (isolated from other groups)
+  // Each group gets their own .codex/ to prevent cross-group session access
   const groupSessionsDir = path.join(
     DATA_DIR,
     'sessions',
     group.folder,
-    '.claude',
+    '.codex',
   );
-  fs.mkdirSync(groupSessionsDir, { recursive: true });
-  const settingsFile = path.join(groupSessionsDir, 'settings.json');
-  if (!fs.existsSync(settingsFile)) {
-    fs.writeFileSync(settingsFile, JSON.stringify({
-      env: {
-        // Enable agent swarms (subagent orchestration)
-        // https://code.claude.com/docs/en/agent-teams#orchestrate-teams-of-claude-code-sessions
-        CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: '1',
-        // Load CLAUDE.md from additional mounted directories
-        // https://code.claude.com/docs/en/memory#load-memory-from-additional-directories
-        CLAUDE_CODE_ADDITIONAL_DIRECTORIES_CLAUDE_MD: '1',
-        // Enable Claude's memory feature (persists user preferences between sessions)
-        // https://code.claude.com/docs/en/memory#manage-auto-memory
-        CLAUDE_CODE_DISABLE_AUTO_MEMORY: '0',
-      },
-    }, null, 2) + '\n');
-  }
+  ensureCodexHome(groupSessionsDir, input);
 
-  // Sync skills from container/skills/ into each group's .claude/skills/
+  // Sync skills from container/skills/ into each group's .codex/skills/
   const skillsSrc = path.join(process.cwd(), 'container', 'skills');
   const skillsDst = path.join(groupSessionsDir, 'skills');
   if (fs.existsSync(skillsSrc)) {
@@ -135,7 +167,7 @@ function buildVolumeMounts(
   }
   mounts.push({
     hostPath: groupSessionsDir,
-    containerPath: '/home/node/.claude',
+    containerPath: CODEX_HOME_DIR,
     readonly: false,
   });
 
@@ -170,20 +202,12 @@ function buildVolumeMounts(
     const validatedMounts = validateAdditionalMounts(
       group.containerConfig.additionalMounts,
       group.name,
-      isMain,
+      input.isMain,
     );
     mounts.push(...validatedMounts);
   }
 
   return mounts;
-}
-
-/**
- * Read allowed secrets from .env for passing to the container via stdin.
- * Secrets are never written to disk or mounted as files.
- */
-function readSecrets(): Record<string, string> {
-  return readEnvFile(['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY']);
 }
 
 function buildContainerArgs(mounts: VolumeMount[], containerName: string): string[] {
@@ -226,7 +250,7 @@ export async function runContainerAgent(
   const groupDir = resolveGroupFolderPath(group.folder);
   fs.mkdirSync(groupDir, { recursive: true });
 
-  const mounts = buildVolumeMounts(group, input.isMain);
+  const mounts = buildVolumeMounts(group, input);
   const safeName = group.folder.replace(/[^a-zA-Z0-9-]/g, '-');
   const containerName = `nanoclaw-${safeName}-${Date.now()}`;
   const containerArgs = buildContainerArgs(mounts, containerName);
@@ -269,12 +293,8 @@ export async function runContainerAgent(
     let stdoutTruncated = false;
     let stderrTruncated = false;
 
-    // Pass secrets via stdin (never written to disk or mounted as files)
-    input.secrets = readSecrets();
     container.stdin.write(JSON.stringify(input));
     container.stdin.end();
-    // Remove secrets from input so they don't appear in logs
-    delete input.secrets;
 
     // Streaming output: parse OUTPUT_START/END marker pairs as they arrive
     let parseBuffer = '';

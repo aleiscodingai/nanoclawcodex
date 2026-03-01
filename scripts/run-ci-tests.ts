@@ -61,7 +61,7 @@ async function runMatrixEntry(
 
     // Apply each skill in sequence
     for (const skillName of entry.skills) {
-      const skillDir = path.join(tmpDir, '.claude', 'skills', skillName);
+      const skillDir = path.join(tmpDir, '.codex', 'skills', skillName);
       if (!fs.existsSync(skillDir)) {
         return {
           entry,
@@ -106,7 +106,7 @@ async function runMatrixEntry(
 // --- Main ---
 async function main(): Promise<void> {
   const projectRoot = process.cwd();
-  const skillsDir = path.join(projectRoot, '.claude', 'skills');
+  const skillsDir = path.join(projectRoot, '.codex', 'skills');
   const matrix = generateMatrix(skillsDir);
 
   if (matrix.length === 0) {

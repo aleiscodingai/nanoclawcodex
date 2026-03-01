@@ -103,14 +103,15 @@ export async function run(args: string[]): Promise<void> {
   // Create group folders
   fs.mkdirSync(path.join(projectRoot, 'groups', parsed.folder, 'logs'), { recursive: true });
 
-  // Update assistant name in CLAUDE.md files if different from default
+  // Update assistant name in CODEX.md files if different from default
   let nameUpdated = false;
   if (parsed.assistantName !== 'Andy') {
     logger.info({ from: 'Andy', to: parsed.assistantName }, 'Updating assistant name');
 
     const mdFiles = [
-      path.join(projectRoot, 'groups', 'global', 'CLAUDE.md'),
-      path.join(projectRoot, 'groups', 'main', 'CLAUDE.md'),
+      path.join(projectRoot, 'CODEX.md'),
+      path.join(projectRoot, 'groups', 'global', 'CODEX.md'),
+      path.join(projectRoot, 'groups', 'main', 'CODEX.md'),
     ];
 
     for (const mdFile of mdFiles) {
@@ -119,7 +120,7 @@ export async function run(args: string[]): Promise<void> {
         content = content.replace(/^# Andy$/m, `# ${parsed.assistantName}`);
         content = content.replace(/You are Andy/g, `You are ${parsed.assistantName}`);
         fs.writeFileSync(mdFile, content);
-        logger.info({ file: mdFile }, 'Updated CLAUDE.md');
+        logger.info({ file: mdFile }, 'Updated CODEX.md');
       }
     }
 

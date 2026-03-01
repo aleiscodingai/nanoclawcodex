@@ -36,7 +36,7 @@ describe('uninstall', () => {
       modifiesBase?: Record<string, string>;
     } = {},
   ): void {
-    const skillDir = path.join(tmpDir, '.claude', 'skills', name);
+    const skillDir = path.join(tmpDir, '.codex', 'skills', name);
     fs.mkdirSync(skillDir, { recursive: true });
 
     const addsList = Object.keys(opts.adds ?? {});
@@ -144,7 +144,7 @@ describe('uninstall', () => {
       'telegram code\n',
     );
 
-    // Set up skill package in .claude/skills/
+    // Set up skill package in .codex/skills/
     setupSkillPackage('telegram', {
       adds: { 'src/telegram.ts': 'telegram code\n' },
       modifies: {

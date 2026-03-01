@@ -8,11 +8,11 @@
 
 ## Skills
 
-A [skill](https://code.claude.com/docs/en/skills) is a markdown file in `.claude/skills/` that teaches Claude Code how to transform a NanoClaw installation.
+A [skill](https://developers.openai.com/codex) is a markdown file in `.codex/skills/` that teaches Codex how to transform a NanoClaw installation.
 
 A PR that contributes a skill should not modify any source files.
 
-Your skill should contain the **instructions** Claude follows to add the feature—not pre-built code. See `/add-telegram` for a good example.
+Your skill should contain the **instructions** Codex follows to add the feature—not pre-built code. See `/add-telegram` for a good example.
 
 ### Why?
 

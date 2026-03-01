@@ -42,7 +42,7 @@ Or call `initSkillsSystem()` from `skills-engine/migrate.ts`.
 ### Apply the skill
 
 ```bash
-npx tsx scripts/apply-skill.ts .claude/skills/add-telegram
+npx tsx scripts/apply-skill.ts .codex/skills/add-telegram
 ```
 
 This deterministically:
@@ -98,13 +98,7 @@ If they chose to replace WhatsApp:
 TELEGRAM_ONLY=true
 ```
 
-Sync to container environment:
-
-```bash
-mkdir -p data/env && cp .env data/env/env
-```
-
-The container reads environment from `data/env/env`, not `.env` directly.
+No container sync is required. NanoClaw reads `.env` directly on the host.
 
 ### Disable Group Privacy (for group chats)
 

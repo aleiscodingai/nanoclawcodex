@@ -13,7 +13,7 @@ import Database from 'better-sqlite3';
 
 import { STORE_DIR } from '../src/config.js';
 import { logger } from '../src/logger.js';
-import { getPlatform, getServiceManager, hasSystemd, isRoot } from './platform.js';
+import { commandExists, getPlatform, getServiceManager, hasSystemd, isRoot } from './platform.js';
 import { emitStatus } from './status.js';
 
 export async function run(_args: string[]): Promise<void> {
@@ -87,13 +87,14 @@ export async function run(_args: string[]): Promise<void> {
     }
   }
 
-  // 3. Check credentials
+  // 3. Check Codex login status
   let credentials = 'missing';
-  const envFile = path.join(projectRoot, '.env');
-  if (fs.existsSync(envFile)) {
-    const envContent = fs.readFileSync(envFile, 'utf-8');
-    if (/^(CLAUDE_CODE_OAUTH_TOKEN|ANTHROPIC_API_KEY)=/m.test(envContent)) {
+  if (commandExists('codex')) {
+    try {
+      execSync('codex login status', { stdio: 'ignore' });
       credentials = 'configured';
+    } catch {
+      credentials = 'missing';
     }
   }
 

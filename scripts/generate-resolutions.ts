@@ -6,7 +6,7 @@
  * 2. Set up rerere adapter — git records preimage and assigns a hash
  * 3. Capture the hash by diffing rr-cache before/after
  * 4. Write the correct resolution, git add + git rerere to record postimage
- * 5. Save preimage, resolution, hash sidecar, and meta to .claude/resolutions/
+ * 5. Save preimage, resolution, hash sidecar, and meta to .codex/resolutions/
  */
 import crypto from 'crypto';
 import { execSync } from 'child_process';
@@ -33,9 +33,9 @@ const baseDir = '.nanoclaw/base';
 // The files that conflict when applying discord after telegram
 const conflictFiles = ['src/index.ts', 'src/config.ts', 'src/routing.test.ts'];
 
-const telegramModify = '.claude/skills/add-telegram/modify';
-const discordModify = '.claude/skills/add-discord/modify';
-const shippedResDir = path.join(projectRoot, '.claude', 'resolutions', 'discord+telegram');
+const telegramModify = '.codex/skills/add-telegram/modify';
+const discordModify = '.codex/skills/add-discord/modify';
+const shippedResDir = path.join(projectRoot, '.codex', 'resolutions', 'discord+telegram');
 
 // Get git rr-cache directory
 const gitDir = execSync('git rev-parse --git-dir', { encoding: 'utf-8', cwd: projectRoot }).trim();
@@ -73,7 +73,7 @@ for (const relPath of conflictFiles) {
   // The .resolution files were deleted above, so read from the backup copy
   const resolutionContent = (() => {
     // Check if we have a backup from a previous run
-    const backupPath = path.join(projectRoot, '.claude', 'resolutions', '_backup', relPath + '.resolution');
+    const backupPath = path.join(projectRoot, '.codex', 'resolutions', '_backup', relPath + '.resolution');
     if (fs.existsSync(backupPath)) return fs.readFileSync(backupPath, 'utf-8');
     // Fall back to working tree (only works if both skills are applied)
     const wtPath = path.join(projectRoot, relPath);
@@ -139,7 +139,7 @@ for (const relPath of conflictFiles) {
   cleanupMergeState(relPath);
   fs.writeFileSync(path.join(projectRoot, relPath), origContent);
 
-  // Save to .claude/resolutions/
+  // Save to .codex/resolutions/
   const outDir = path.join(shippedResDir, path.dirname(relPath));
   fs.mkdirSync(outDir, { recursive: true });
 
@@ -167,4 +167,4 @@ const meta = {
 };
 fs.writeFileSync(path.join(shippedResDir, 'meta.yaml'), stringify(meta));
 
-console.log(`\nGenerated ${results.length} resolution(s) in .claude/resolutions/discord+telegram/`);
+console.log(`\nGenerated ${results.length} resolution(s) in .codex/resolutions/discord+telegram/`);

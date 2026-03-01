@@ -171,7 +171,7 @@ describe('ci-matrix', () => {
     }
 
     it('reads manifests from disk and finds overlaps', () => {
-      const skillsDir = path.join(tmpDir, '.claude', 'skills');
+      const skillsDir = path.join(tmpDir, '.codex', 'skills');
 
       createManifestDir(skillsDir, 'telegram', {
         skill: 'telegram',
@@ -206,7 +206,7 @@ describe('ci-matrix', () => {
     });
 
     it('returns empty matrix for non-overlapping skills on disk', () => {
-      const skillsDir = path.join(tmpDir, '.claude', 'skills');
+      const skillsDir = path.join(tmpDir, '.codex', 'skills');
 
       createManifestDir(skillsDir, 'alpha', {
         skill: 'alpha',
@@ -233,7 +233,7 @@ describe('ci-matrix', () => {
     });
 
     it('detects structured npm overlap from disk manifests', () => {
-      const skillsDir = path.join(tmpDir, '.claude', 'skills');
+      const skillsDir = path.join(tmpDir, '.codex', 'skills');
 
       createManifestDir(skillsDir, 'skill-x', {
         skill: 'skill-x',

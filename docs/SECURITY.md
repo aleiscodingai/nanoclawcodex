@@ -42,11 +42,11 @@ private_key, .secret
 
 **Read-Only Project Root:**
 
-The main group's project root is mounted read-only. Writable paths the agent needs (group folder, IPC, `.claude/`) are mounted separately. This prevents the agent from modifying host application code (`src/`, `dist/`, `package.json`, etc.) which would bypass the sandbox entirely on next restart.
+The main group's project root is mounted read-only. Writable paths the agent needs (group folder, IPC, `.codex/`) are mounted separately. This prevents the agent from modifying host application code (`src/`, `dist/`, `package.json`, etc.) which would bypass the sandbox entirely on next restart.
 
 ### 3. Session Isolation
 
-Each group has isolated Claude sessions at `data/sessions/{group}/.claude/`:
+Each group has isolated Codex sessions at `data/sessions/{group}/.codex/`:
 - Groups cannot see other groups' conversation history
 - Session data includes full message history and file contents read
 - Prevents cross-group information disclosure
@@ -67,20 +67,15 @@ Messages and task operations are verified against group identity:
 ### 5. Credential Handling
 
 **Mounted Credentials:**
-- Claude auth tokens (filtered from `.env`, read-only)
+- Codex credentials (copied from `~/.codex` into per-group `.codex`, read-only for non-main)
 
 **NOT Mounted:**
 - WhatsApp session (`store/auth/`) - host only
 - Mount allowlist - external, never mounted
 - Any credentials matching blocked patterns
 
-**Credential Filtering:**
-Only these environment variables are exposed to containers:
-```typescript
-const allowedVars = ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'];
-```
-
-> **Note:** Anthropic credentials are mounted so that Claude Code can authenticate when the agent runs. However, this means the agent itself can discover these credentials via Bash or file operations. Ideally, Claude Code would authenticate without exposing credentials to the agent's execution environment, but I couldn't figure this out. **PRs welcome** if you have ideas for credential isolation.
+**Credential Handling:**
+Codex CLI authenticates via `codex login --device-auth` and stores credentials under `~/.codex`. NanoClaw copies those credentials into each group's `.codex/` directory before container startup. This avoids passing API keys through environment variables.
 
 ## Privilege Comparison
 
@@ -88,7 +83,7 @@ const allowedVars = ['CLAUDE_CODE_OAUTH_TOKEN', 'ANTHROPIC_API_KEY'];
 |------------|------------|----------------|
 | Project root access | `/workspace/project` (ro) | None |
 | Group folder | `/workspace/group` (rw) | `/workspace/group` (rw) |
-| Global memory | Implicit via project | `/workspace/global` (ro) |
+| Global memory | `/workspace/global/CODEX.md` (rw) | `/workspace/global/CODEX.md` (ro) |
 | Additional mounts | Configurable | Read-only unless allowed |
 | Network access | Unrestricted | Unrestricted |
 | MCP tools | All | All |
